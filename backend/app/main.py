@@ -40,6 +40,7 @@ from app.api.two_factor import router as two_factor_router
 from app.api.user_lookup import router as user_lookup_router
 from app.api.workspaces import router as workspaces_router
 from app.api.admin import router as admin_router, check_registration_enabled
+from app.api.debts import router as debts_router
 from app.core.auth import fastapi_users
 from app.core.auth_policy import require_local_auth_enabled
 from app.core.config import get_settings
@@ -171,6 +172,7 @@ app.include_router(connections_router)
 app.include_router(recurring_router)
 app.include_router(budgets_router)
 app.include_router(goals_router)
+app.include_router(debts_router)
 app.include_router(groups_router)
 app.include_router(assets_router)
 app.include_router(asset_groups_router)

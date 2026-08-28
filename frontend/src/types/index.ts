@@ -98,6 +98,9 @@ export interface Category {
   is_hidden: boolean
   treat_as_transfer: boolean
   is_ignored: boolean
+  parent_id?: string | null
+  path?: string[]
+  depth?: number
 }
 
 /** Active rules that assign a category, used when retiring one. */
@@ -998,6 +1001,10 @@ export interface Attachment {
   size: number
   created_at: string
 }
+
+export interface DebtPayment { id: string; amount: number; principal_amount: number; interest_amount: number; paid_on: string; notes?: string | null; transaction_id?: string | null; interest_transaction_id?: string | null }
+export interface DebtReceipt { id: string; debt_payment_id: string; transaction_id?: string | null; title?: string | null; category_id?: string | null; tags?: string | null; filename: string; content_type: string; size: number; is_archived: boolean; created_at: string }
+export interface Debt { id: string; payee_id: string; payee_name: string; direction: 'receivable' | 'payable'; description: string; principal: number; paid: number; principal_paid: number; interest_paid: number; principal_balance: number; accrued_interest: number; balance: number; currency: string; opened_on: string; due_on?: string | null; notes?: string | null; category_id?: string | null; account_id?: string | null; annual_interest_rate?: number | null; interest_start_on?: string | null; is_archived: boolean; status: string; payments?: DebtPayment[] }
 
 export interface ReportResponse {
   summary: ReportSummary

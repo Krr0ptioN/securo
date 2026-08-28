@@ -50,6 +50,8 @@ import type {
   Attachment,
   Goal,
   GoalSummary,
+  Debt,
+  DebtReceipt,
   DashboardSummary,
   SpendingByCategory,
   MonthlyTrend,
@@ -1052,6 +1054,24 @@ export const goals = {
     const { data } = await api.get('/goals/summary', { params: { limit } })
     return data
   },
+}
+
+export const debts = {
+  list: async (params?: Record<string, unknown>): Promise<Debt[]> => (await api.get('/debts', { params })).data,
+  get: async (id: string): Promise<Debt> => (await api.get(`/debts/${id}`)).data,
+  create: async (payload: Record<string, unknown>): Promise<Debt> => (await api.post('/debts', payload)).data,
+  update: async (id: string, payload: Record<string, unknown>): Promise<Debt> => (await api.patch(`/debts/${id}`, payload)).data,
+  pay: async (id: string, payload: Record<string, unknown>): Promise<Debt> => (await api.post(`/debts/${id}/payments`, payload)).data,
+  receipts: async (id: string, params?: Record<string, unknown>): Promise<DebtReceipt[]> => (await api.get(`/debts/${id}/receipts`, { params })).data,
+  uploadReceipt: async (debtId: string, paymentId: string, file: File, metadata?: { title?: string; tags?: string; category_id?: string }) => {
+    const body = new FormData(); body.append('file', file)
+    if (metadata?.title) body.append('title', metadata.title)
+    if (metadata?.tags) body.append('tags', metadata.tags)
+    if (metadata?.category_id) body.append('category_id', metadata.category_id)
+    return (await api.post(`/debts/${debtId}/payments/${paymentId}/receipts`, body)).data as DebtReceipt
+  },
+  updateReceipt: async (id: string, payload: Record<string, unknown>): Promise<DebtReceipt> => (await api.patch(`/debts/receipts/${id}`, payload)).data,
+  receiptDownloadUrl: (id: string, inline = false) => `/api/debts/receipts/${id}/download${inline ? '?inline=true' : ''}`,
 }
 
 // Dashboard

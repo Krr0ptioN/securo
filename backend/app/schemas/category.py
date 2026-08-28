@@ -12,6 +12,7 @@ class CategoryBase(BaseModel):
 
 class CategoryCreate(CategoryBase):
     group_id: Optional[uuid.UUID] = None
+    parent_id: Optional[uuid.UUID] = None
     treat_as_transfer: bool = False
     is_ignored: bool = False
 
@@ -21,6 +22,7 @@ class CategoryUpdate(BaseModel):
     icon: Optional[str] = None
     color: Optional[str] = None
     group_id: Optional[uuid.UUID] = None
+    parent_id: Optional[uuid.UUID] = None
     treat_as_transfer: Optional[bool] = None
     is_ignored: Optional[bool] = None
     is_hidden: Optional[bool] = None
@@ -30,6 +32,9 @@ class CategoryRead(CategoryBase):
     id: uuid.UUID
     user_id: uuid.UUID
     group_id: Optional[uuid.UUID] = None
+    parent_id: Optional[uuid.UUID] = None
+    path: list[str] = []
+    depth: int = 0
     is_system: bool
     is_hidden: bool = False
     treat_as_transfer: bool = False

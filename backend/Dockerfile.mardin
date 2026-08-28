@@ -1,0 +1,6 @@
+# Keep the exact upstream release and layer only the local currency extension
+# on top.  This avoids rebuilding the pinned Python dependency set.
+FROM ghcr.io/securo-finance/securo-backend:latest
+
+COPY app /app/app
+COPY alembic /app/alembic

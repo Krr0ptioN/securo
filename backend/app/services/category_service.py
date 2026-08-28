@@ -134,7 +134,19 @@ async def get_categories(
         .where(*filters)
         .order_by(Category.is_hidden.asc(), Category.is_system.desc(), Category.name)
     )
-    return list(result.scalars().all())
+    categories = list(result.scalars().all())
+    by_id = {category.id: category for category in categories}
+    for category in categories:
+        path: list[str] = []
+        current = category
+        seen: set[uuid.UUID] = set()
+        while current and current.id not in seen:
+            seen.add(current.id)
+            path.append(current.name)
+            current = by_id.get(current.parent_id) if current.parent_id else None
+        category.path = list(reversed(path))
+        category.depth = len(category.path) - 1
+    return categories
 
 
 async def get_category(
@@ -154,6 +166,10 @@ async def create_category(
     user_id: uuid.UUID,
     data: CategoryCreate,
 ) -> Category:
+    if data.parent_id:
+        parent = await get_category(session, data.parent_id, workspace_id)
+        if not parent:
+            raise ValueError("Parent category not found")
     category = Category(user_id=user_id, workspace_id=workspace_id, **data.model_dump())
     session.add(category)
     await session.commit()
@@ -215,6 +231,15 @@ async def update_category(
         return None
 
     changes = data.model_dump(exclude_unset=True)
+    if "parent_id" in changes and changes["parent_id"]:
+        parent = await get_category(session, changes["parent_id"], workspace_id)
+        if not parent or parent.id == category.id:
+            raise ValueError("Invalid parent category")
+        cursor = parent
+        while cursor.parent_id:
+            if cursor.parent_id == category.id:
+                raise ValueError("A category cannot be its own ancestor")
+            cursor = await get_category(session, cursor.parent_id, workspace_id)
     if changes.get("is_hidden") is True and not category.is_system:
         raise CategoryVisibilityError("Only system categories can be hidden")
 

@@ -6,6 +6,7 @@ router = APIRouter(prefix="/api/currencies", tags=["currencies"])
 
 CURRENCY_META = {
     "BRL": {"symbol": "R$", "name": "Real Brasileiro", "flag": "\U0001F1E7\U0001F1F7"},
+    "TRY": {"symbol": "₺", "name": "Turkish Lira", "flag": "\U0001F1F9\U0001F1F7"},
     "USD": {"symbol": "$", "name": "US Dollar", "flag": "\U0001F1FA\U0001F1F8"},
     "EUR": {"symbol": "\u20ac", "name": "Euro", "flag": "\U0001F1EA\U0001F1FA"},
     "GBP": {"symbol": "\u00a3", "name": "British Pound", "flag": "\U0001F1EC\U0001F1E7"},
