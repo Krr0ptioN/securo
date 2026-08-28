@@ -59,6 +59,7 @@ export default function CategoriesPage() {
   const [groupFormIcon, setGroupFormIcon] = useState('folder')
   const [groupFormColor, setGroupFormColor] = useState('#6B7280')
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
+  const [collapsedCategories, setCollapsedCategories] = useState<Set<string>>(new Set())
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null)
   const [deletingGroup, setDeletingGroup] = useState<CategoryGroup | null>(null)
   const [hidingCategory, setHidingCategory] = useState<
@@ -163,9 +164,9 @@ export default function CategoriesPage() {
     })
   }
 
-  const ungrouped = categoriesList?.filter((c) => !c.group_id) ?? []
-  const hierarchyRoots = ungrouped.filter((c) => !c.parent_id)
-  const childrenFor = (parentId: string) => ungrouped
+  const allCategories = categoriesList ?? []
+  const hierarchyRoots = allCategories.filter((c) => !c.parent_id)
+  const childrenFor = (parentId: string) => allCategories
     .filter((c) => c.parent_id === parentId)
     .sort((a, b) => a.name.localeCompare(b.name))
 
@@ -192,11 +193,16 @@ export default function CategoriesPage() {
     </span>
   )
 
-  const renderCategoryItem = (cat: Category) => (
+  const renderCategoryItem = (cat: Category, hasChildren: boolean) => (
     <div key={cat.id} className={`flex items-center gap-3 px-4 sm:px-5 pl-6 sm:pl-12 py-2.5 border-b border-border last:border-0 hover:bg-muted transition-colors ${cat.is_hidden ? 'opacity-60' : ''}`}>
+      {hasChildren ? (
+        <button className="shrink-0 p-1 -ml-5" onClick={() => setCollapsedCategories((previous) => { const next = new Set(previous); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next })}>
+          {collapsedCategories.has(cat.id) ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+        </button>
+      ) : <span className="w-4 shrink-0" />}
       <CategoryIcon icon={cat.icon} color={cat.color} size="md" />
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground truncate" style={{ paddingLeft: `${Math.max(0, cat.depth ?? 0) * 12}px` }} title={cat.path?.join(' › ')}>{cat.path?.length ? cat.path.join(' › ') : cat.name}</span>
+        <span className="text-sm font-medium text-foreground truncate" style={{ paddingLeft: `${Math.max(0, cat.depth ?? 0) * 12}px` }} title={cat.path?.join(' › ')}>{cat.name}</span>
         {cat.is_hidden && renderHiddenBadge(t('categories.hiddenBadge'))}
         {cat.treat_as_transfer && (
           <span
@@ -254,8 +260,8 @@ export default function CategoriesPage() {
 
   const renderHierarchy = (cat: Category) => (
     <React.Fragment key={cat.id}>
-      {renderCategoryItem(cat)}
-      {childrenFor(cat.id).map(renderHierarchy)}
+      {renderCategoryItem(cat, childrenFor(cat.id).length > 0)}
+      {!collapsedCategories.has(cat.id) && childrenFor(cat.id).map(renderHierarchy)}
     </React.Fragment>
   )
 
@@ -274,34 +280,29 @@ export default function CategoriesPage() {
             <button
               className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => {
-                if (!groups) return
-                const allCollapsed = groups.every((g) => collapsedGroups.has(g.id))
+                const parents = allCategories.filter((category) => childrenFor(category.id).length > 0)
+                const allCollapsed = parents.length > 0 && parents.every((category) => collapsedCategories.has(category.id))
                 if (allCollapsed) {
-                  setCollapsedGroups(new Set())
+                  setCollapsedCategories(new Set())
                 } else {
-                  setCollapsedGroups(new Set(groups.map((g) => g.id)))
+                  setCollapsedCategories(new Set(parents.map((category) => category.id)))
                 }
               }}
             >
               <ChevronsUpDown size={13} />
-              {groups && groups.every((g) => collapsedGroups.has(g.id)) ? t('categories.expandAll') : t('categories.collapseAll')}
+              {allCategories.filter((category) => childrenFor(category.id).length > 0).every((category) => collapsedCategories.has(category.id)) ? t('categories.expandAll') : t('categories.collapseAll')}
             </button>
           }
           action={
             canWrite ? (
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={() => openGroupDialog(null)}>
-                  <Plus size={13} /> <span className="hidden sm:inline">{t('groups.add')}</span>
-                </Button>
-                <Button size="sm" className="gap-1.5 h-8" onClick={() => openCatDialog(null)}>
-                  <Plus size={13} /> <span className="hidden sm:inline">{t('categories.addCategory')}</span>
-                </Button>
-              </div>
+              <Button size="sm" className="gap-1.5 h-8" onClick={() => openCatDialog(null)}>
+                <Plus size={13} /> <span className="hidden sm:inline">{t('categories.addCategory')}</span>
+              </Button>
             ) : undefined
           }
         />
         <div>
-          {groups?.map((group) => {
+          {false && groups?.map((group) => {
             const isCollapsed = collapsedGroups.has(group.id)
             return (
               <div key={group.id} className={group.is_hidden ? 'opacity-60' : ''}>
@@ -347,18 +348,11 @@ export default function CategoriesPage() {
                     </div>
                   )}
                 </div>
-                {!isCollapsed && group.categories.map(renderCategoryItem)}
+                {!isCollapsed && group.categories.map((category) => renderCategoryItem(category, false))}
               </div>
             )
           })}
-          {hierarchyRoots.length > 0 && (
-            <div>
-              <div className="px-5 py-3 border-b border-border bg-muted/40">
-                <span className="text-sm font-semibold text-muted-foreground">Category hierarchy</span>
-              </div>
-              {hierarchyRoots.map(renderHierarchy)}
-            </div>
-          )}
+          {hierarchyRoots.map(renderHierarchy)}
         </div>
       </SectionCard>
 
@@ -377,7 +371,7 @@ export default function CategoriesPage() {
                 name: formData.get('name') as string,
                 icon: formData.get('icon') as string,
                 color: formData.get('color') as string,
-                group_id: (formData.get('group_id') as string) || null,
+                group_id: null,
                 parent_id: formParentId || null,
                 treat_as_transfer: formTreatAsTransfer,
                 is_ignored: formIgnoreTransfer
@@ -396,21 +390,6 @@ export default function CategoriesPage() {
                 <Input name="name" defaultValue={editingCat?.name ?? ''} required />
               </div>
               <div className="space-y-2">
-                <Label>{t('categories.group')}</Label>
-                <select
-                  name="group_id"
-                  defaultValue={editingCat?.group_id ?? ''}
-                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">{t('categories.noGroup')}</option>
-                  {groups?.filter((g) => !g.is_hidden || g.id === editingCat?.group_id).map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}{g.is_hidden ? ` (${t('groups.hiddenBadge')})` : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
                 <Label>Parent category</Label>
                 <select
                   value={formParentId}
@@ -418,7 +397,7 @@ export default function CategoriesPage() {
                   className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">No parent (top level)</option>
-                  {ungrouped.filter((c) => c.id !== editingCat?.id).sort((a, b) => (a.path?.join(' › ') ?? a.name).localeCompare(b.path?.join(' › ') ?? b.name)).map((c) => (
+                  {allCategories.filter((c) => c.id !== editingCat?.id).sort((a, b) => (a.path?.join(' › ') ?? a.name).localeCompare(b.path?.join(' › ') ?? b.name)).map((c) => (
                     <option key={c.id} value={c.id}>{c.path?.join(' › ') ?? c.name}</option>
                   ))}
                 </select>
