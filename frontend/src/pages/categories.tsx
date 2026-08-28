@@ -53,6 +53,7 @@ export default function CategoriesPage() {
   const [formColor, setFormColor] = useState('#6366f1')
   const [formTreatAsTransfer, setFormTreatAsTransfer] = useState(false)
   const [formIgnoreTransfer, setFormIgnoreTransfer] = useState(false)
+  const [formParentId, setFormParentId] = useState('')
   const [groupDialogOpen, setGroupDialogOpen] = useState(false)
   const [editingGroup, setEditingGroup] = useState<CategoryGroup | null>(null)
   const [groupFormIcon, setGroupFormIcon] = useState('folder')
@@ -163,6 +164,10 @@ export default function CategoriesPage() {
   }
 
   const ungrouped = categoriesList?.filter((c) => !c.group_id) ?? []
+  const hierarchyRoots = ungrouped.filter((c) => !c.parent_id)
+  const childrenFor = (parentId: string) => ungrouped
+    .filter((c) => c.parent_id === parentId)
+    .sort((a, b) => a.name.localeCompare(b.name))
 
   const openCatDialog = (cat: Category | null) => {
     setEditingCat(cat)
@@ -170,6 +175,7 @@ export default function CategoriesPage() {
     setFormColor(cat?.color ?? '#6366f1')
     setFormTreatAsTransfer(cat?.treat_as_transfer ?? false)
     setFormIgnoreTransfer(cat?.is_ignored ?? false)
+    setFormParentId(cat?.parent_id ?? '')
     setCatDialogOpen(true)
   }
 
@@ -244,6 +250,13 @@ export default function CategoriesPage() {
         </div>
       )}
     </div>
+  )
+
+  const renderHierarchy = (cat: Category) => (
+    <React.Fragment key={cat.id}>
+      {renderCategoryItem(cat)}
+      {childrenFor(cat.id).map(renderHierarchy)}
+    </React.Fragment>
   )
 
   return (
@@ -338,12 +351,12 @@ export default function CategoriesPage() {
               </div>
             )
           })}
-          {ungrouped.length > 0 && (
+          {hierarchyRoots.length > 0 && (
             <div>
               <div className="px-5 py-3 border-b border-border bg-muted/40">
-                <span className="text-sm font-semibold text-muted-foreground">{t('groups.noGroup')}</span>
+                <span className="text-sm font-semibold text-muted-foreground">Category hierarchy</span>
               </div>
-              {ungrouped.map(renderCategoryItem)}
+              {hierarchyRoots.map(renderHierarchy)}
             </div>
           )}
         </div>
@@ -365,6 +378,7 @@ export default function CategoriesPage() {
                 icon: formData.get('icon') as string,
                 color: formData.get('color') as string,
                 group_id: (formData.get('group_id') as string) || null,
+                parent_id: formParentId || null,
                 treat_as_transfer: formTreatAsTransfer,
                 is_ignored: formIgnoreTransfer
               }
@@ -395,6 +409,20 @@ export default function CategoriesPage() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Parent category</Label>
+                <select
+                  value={formParentId}
+                  onChange={(e) => setFormParentId(e.target.value)}
+                  className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">No parent (top level)</option>
+                  {ungrouped.filter((c) => c.id !== editingCat?.id).sort((a, b) => (a.path?.join(' › ') ?? a.name).localeCompare(b.path?.join(' › ') ?? b.name)).map((c) => (
+                    <option key={c.id} value={c.id}>{c.path?.join(' › ') ?? c.name}</option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">Categories can be nested to any depth.</p>
               </div>
               <div className="space-y-2">
                 <Label>{t('groups.color')}</Label>
