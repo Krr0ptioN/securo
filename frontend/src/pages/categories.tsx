@@ -190,7 +190,7 @@ export default function CategoriesPage() {
     <div key={cat.id} className={`flex items-center gap-3 px-4 sm:px-5 pl-6 sm:pl-12 py-2.5 border-b border-border last:border-0 hover:bg-muted transition-colors ${cat.is_hidden ? 'opacity-60' : ''}`}>
       <CategoryIcon icon={cat.icon} color={cat.color} size="md" />
       <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground truncate">{cat.name}</span>
+        <span className="text-sm font-medium text-foreground truncate" style={{ paddingLeft: `${Math.max(0, cat.depth ?? 0) * 12}px` }} title={cat.path?.join(' › ')}>{cat.path?.length ? cat.path.join(' › ') : cat.name}</span>
         {cat.is_hidden && renderHiddenBadge(t('categories.hiddenBadge'))}
         {cat.treat_as_transfer && (
           <span

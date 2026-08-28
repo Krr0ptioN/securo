@@ -62,6 +62,8 @@ export function CategorySelect({
     categories ?? [],
     selectedCategory
   )
+  const categoryLabel = (category: Category) =>
+    category.path?.length ? category.path.join(' › ') : category.name
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -83,7 +85,7 @@ export function CategorySelect({
                     style={{ backgroundColor: selectedCategory.color }}
                   />
                 ) : null}
-                <span className="truncate">{selectedCategory.name}</span>
+                <span className="truncate">{categoryLabel(selectedCategory)}</span>
                 {selectedCategoryIsHidden && (
                   <span className="shrink-0 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
                     {t('categories.hiddenBadge')}
@@ -132,10 +134,10 @@ export function CategorySelect({
                 <div className="px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
                   {group.name}
                 </div>
-                {group.categories.map((cat) => (
+                {[...group.categories].sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b))).map((cat) => (
                   <CommandItem
                     key={cat.id}
-                    value={`${group.name} ${cat.name}`}
+                    value={`${group.name} ${categoryLabel(cat)}`}
                     onSelect={() => {
                       onChange(cat.id)
                       setOpen(false)
@@ -149,7 +151,7 @@ export function CategorySelect({
                           style={{ backgroundColor: cat.color }}
                         />
                       ) : null}
-                      <span className="truncate">{cat.name}</span>
+                      <span className="truncate">{categoryLabel(cat)}</span>
                     </div>
                     {value === cat.id && <CheckIcon className="size-4 shrink-0" />}
                   </CommandItem>
