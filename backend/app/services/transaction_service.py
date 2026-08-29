@@ -15,6 +15,7 @@ from app.models.bank_connection import BankConnection
 from app.models.category import Category
 from app.models.group import Group, GroupMember
 from app.models.payee import Payee
+from app.models.goal import Goal
 from app.schemas.transaction import (
     InstallmentSeriesCreate,
     TransactionCreate,
@@ -499,6 +500,29 @@ async def get_transactions(
 
     result = await session.execute(query)
     transactions = list(result.scalars().all())
+
+    # Account-tracked goals are implicit entities for account transactions.
+    # Annotate only when an account maps to a single active goal; this avoids
+    # inventing an ambiguous relationship when several goals share an account.
+    if transactions:
+        account_ids_for_goals = {tx.account_id for tx in transactions if tx.account_id}
+        if account_ids_for_goals:
+            goal_rows = await session.execute(
+                select(Goal).where(
+                    Goal.workspace_id == workspace_id,
+                    Goal.account_id.in_(account_ids_for_goals),
+                    Goal.status != "archived",
+                )
+            )
+            goals_by_account: dict[uuid.UUID, list[Goal]] = {}
+            for goal in goal_rows.scalars().all():
+                goals_by_account.setdefault(goal.account_id, []).append(goal)
+            for tx in transactions:
+                matches = goals_by_account.get(tx.account_id, [])
+                if len(matches) == 1 and not tx.related_entity_type:
+                    tx.related_entity_type = "goal"
+                    tx.related_entity_id = matches[0].id
+                    tx.related_entity_name = matches[0].name
 
     # Batch-load attachment counts in a single query
     if transactions:
