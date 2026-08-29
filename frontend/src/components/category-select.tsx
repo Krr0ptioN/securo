@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDownIcon, CheckIcon } from 'lucide-react'
+import { ChevronDownIcon, ChevronRightIcon, CheckIcon } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command'
 import type { Category, CategoryGroup } from '@/types'
@@ -23,12 +23,14 @@ interface CategorySelectProps {
   contentProps?: React.ComponentProps<typeof PopoverContent>
 }
 
+const childrenCount = (parentId: string, categories: Category[]) =>
+  categories.filter((category) => category.parent_id === parentId).length
+
 
 export function CategorySelect({
   value,
   onChange,
   categories,
-  groups,
   currentCategory,
   placeholder,
   disabled = false,
@@ -37,23 +39,11 @@ export function CategorySelect({
   contentProps,
 }: CategorySelectProps) {
   const [open, setOpen] = useState(false)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [search, setSearch] = useState('')
   const { t } = useTranslation()
 
   const resolvedPlaceholder = placeholder ?? t('transactions.selectCategory', 'Select category')
-
-  const displayGroups = useMemo(() => {
-    const ungrouped = (categories ?? []).filter((c) => !c.group_id)
-    if (ungrouped.length === 0) return groups
-
-    return [
-      ...groups,
-      {
-        id: 'ungrouped-virtual',
-        name: t('groups.noGroup'),
-        categories: ungrouped,
-      } as CategoryGroup,
-    ]
-  }, [categories, groups, t])
 
   const selectedCategory = useMemo(() => {
     return resolveSelectedCategory(categories ?? [], value, currentCategory)
@@ -64,6 +54,32 @@ export function CategorySelect({
   )
   const categoryLabel = (category: Category) =>
     category.path?.length ? category.path.join(' › ') : category.name
+
+  const treeRows = useMemo(() => {
+    const visible = (categories ?? []).filter((category) => !category.is_hidden || category.id === value)
+    const children = (parentId?: string | null) => visible
+      .filter((category) => (category.parent_id ?? null) === (parentId ?? null))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    const query = normalizeText(search)
+    const matches = new Map<string, boolean>()
+    const hasMatch = (category: Category): boolean => {
+      if (matches.has(category.id)) return matches.get(category.id)!
+      const own = normalizeText(categoryLabel(category)).includes(query)
+      const descendant = children(category.id).some(hasMatch)
+      matches.set(category.id, own || descendant)
+      return own || descendant
+    }
+    const rows: { category: Category; depth: number; hasChildren: boolean }[] = []
+    const walk = (category: Category, depth: number) => {
+      const nested = children(category.id)
+      if (query && !hasMatch(category)) return
+      rows.push({ category, depth, hasChildren: nested.length > 0 })
+      const showChildren = expanded.has(category.id) || Boolean(query)
+      if (showChildren) nested.forEach((child) => walk(child, depth + 1))
+    }
+    children().forEach((root) => walk(root, 0))
+    return rows
+  }, [categories, expanded, search, value])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -106,14 +122,10 @@ export function CategorySelect({
         className="w-[var(--radix-popover-trigger-width)] p-0 overflow-hidden"
         {...contentProps}
       >
-        <Command
-          filter={(itemValue, search) => {
-            return normalizeText(itemValue).includes(normalizeText(search)) ? 1 : 0
-          }}
-        >
-          <CommandInput placeholder={t('transactions.searchCategory')} />
+        <Command filter={() => 1}>
+          <CommandInput placeholder={t('transactions.searchCategory')} value={search} onValueChange={setSearch} />
           <CommandList>
-            <CommandEmpty>{t('transactions.noCategoryFound')}</CommandEmpty>
+            {!treeRows.length && <CommandEmpty>{t('transactions.noCategoryFound')}</CommandEmpty>}
             {allowNone && (
               <CommandGroup>
                 <CommandItem
@@ -129,35 +141,21 @@ export function CategorySelect({
                 </CommandItem>
               </CommandGroup>
             )}
-            {displayGroups.map((group) => (
-              <CommandGroup key={group.id}>
-                <div className="px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted-foreground/70">
-                  {group.name}
-                </div>
-                {[...group.categories].sort((a, b) => categoryLabel(a).localeCompare(categoryLabel(b))).map((cat) => (
-                  <CommandItem
-                    key={cat.id}
-                    value={`${group.name} ${categoryLabel(cat)}`}
-                    onSelect={() => {
-                      onChange(cat.id)
-                      setOpen(false)
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 truncate flex-1">
-                      {cat.color ? (
-                        <span
-                          className="size-2.5 shrink-0 rounded-full border border-black/5"
-                          style={{ backgroundColor: cat.color }}
-                        />
-                      ) : null}
-                      <span className="truncate">{categoryLabel(cat)}</span>
-                    </div>
-                    {value === cat.id && <CheckIcon className="size-4 shrink-0" />}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ))}
+            <CommandGroup>
+              {treeRows.map(({ category: cat, depth, hasChildren }) => (
+                <CommandItem key={cat.id} value={categoryLabel(cat)} onSelect={() => { onChange(cat.id); setOpen(false); setSearch('') }} className="cursor-pointer py-1.5">
+                  <button type="button" aria-label={expanded.has(cat.id) ? 'Collapse category' : 'Expand category'} className="mr-1 shrink-0 rounded p-0.5 hover:bg-muted" style={{ marginLeft: `${depth * 16}px` }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setExpanded((previous) => { const next = new Set(previous); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next }) }}>
+                    {hasChildren ? (expanded.has(cat.id) || search ? <ChevronDownIcon className="size-3.5" /> : <ChevronRightIcon className="size-3.5" />) : <span className="inline-block size-3.5" />}
+                  </button>
+                  <div className="flex items-center gap-2 min-w-0 truncate flex-1">
+                    {cat.color ? <span className="size-2.5 shrink-0 rounded-full border border-black/5" style={{ backgroundColor: cat.color }} /> : null}
+                    <span className="truncate">{cat.name}</span>
+                  </div>
+                  {hasChildren && <span className="text-[10px] text-muted-foreground mr-1">{childrenCount(cat.id, categories)}</span>}
+                  {value === cat.id && <CheckIcon className="size-4 shrink-0" />}
+                </CommandItem>
+              ))}
+            </CommandGroup>
           </CommandList>
         </Command>
       </PopoverContent>
