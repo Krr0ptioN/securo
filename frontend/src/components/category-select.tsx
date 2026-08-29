@@ -143,8 +143,8 @@ export function CategorySelect({
             )}
             <CommandGroup>
               {treeRows.map(({ category: cat, depth, hasChildren }) => (
-                <CommandItem key={cat.id} value={categoryLabel(cat)} onSelect={() => { onChange(cat.id); setOpen(false); setSearch('') }} className="cursor-pointer py-1.5">
-                  <button type="button" aria-label={expanded.has(cat.id) ? 'Collapse category' : 'Expand category'} className="mr-1 shrink-0 rounded p-0.5 hover:bg-muted" style={{ marginLeft: `${depth * 16}px` }} onClick={(event) => { event.preventDefault(); event.stopPropagation(); setExpanded((previous) => { const next = new Set(previous); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next }) }}>
+                <CommandItem key={cat.id} value={categoryLabel(cat)} onSelect={() => { onChange(cat.id); setOpen(false); setSearch('') }} className="cursor-pointer py-1.5" style={{ paddingLeft: `${8 + depth * 16}px` }}>
+                  <button type="button" aria-label={expanded.has(cat.id) ? 'Collapse category' : 'Expand category'} className="mr-1 shrink-0 rounded p-0.5 hover:bg-muted" onClick={(event) => { event.preventDefault(); event.stopPropagation(); setExpanded((previous) => { const next = new Set(previous); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next }) }}>
                     {hasChildren ? (expanded.has(cat.id) || search ? <ChevronDownIcon className="size-3.5" /> : <ChevronRightIcon className="size-3.5" />) : <span className="inline-block size-3.5" />}
                   </button>
                   <div className="flex items-center gap-2 min-w-0 truncate flex-1">

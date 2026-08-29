@@ -194,15 +194,16 @@ export default function CategoriesPage() {
   )
 
   const renderCategoryItem = (cat: Category, hasChildren: boolean) => (
-    <div key={cat.id} className={`flex items-center gap-3 px-4 sm:px-5 pl-6 sm:pl-12 py-2.5 border-b border-border last:border-0 hover:bg-muted transition-colors ${cat.is_hidden ? 'opacity-60' : ''}`}>
+    <div key={cat.id} className={`flex items-center gap-3 px-4 sm:px-5 py-2.5 border-b border-border last:border-0 hover:bg-muted transition-colors ${cat.is_hidden ? 'opacity-60' : ''}`}>
+      <div className="flex min-w-0 flex-1 items-center gap-3" style={{ paddingLeft: `${24 + (cat.depth ?? 0) * 20}px` }}>
       {hasChildren ? (
-        <button className="shrink-0 p-1 -ml-5" onClick={() => setCollapsedCategories((previous) => { const next = new Set(previous); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next })}>
+        <button className="shrink-0 rounded p-1 hover:bg-background" onClick={() => setCollapsedCategories((previous) => { const next = new Set(previous); if (next.has(cat.id)) next.delete(cat.id); else next.add(cat.id); return next })}>
           {collapsedCategories.has(cat.id) ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
         </button>
-      ) : <span className="w-4 shrink-0" />}
+      ) : <span className="w-6 shrink-0" />}
       <CategoryIcon icon={cat.icon} color={cat.color} size="md" />
-      <div className="flex-1 min-w-0 flex items-center gap-2">
-        <span className="text-sm font-medium text-foreground truncate" style={{ paddingLeft: `${Math.max(0, cat.depth ?? 0) * 12}px` }} title={cat.path?.join(' › ')}>{cat.name}</span>
+      <div className="min-w-0 flex items-center gap-2">
+        <span className="truncate text-sm font-medium text-foreground" title={cat.path?.join(' › ')}>{cat.name}</span>
         {cat.is_hidden && renderHiddenBadge(t('categories.hiddenBadge'))}
         {cat.treat_as_transfer && (
           <span
@@ -220,6 +221,7 @@ export default function CategoriesPage() {
             {t('categories.ignoreTransferBadge')}
           </span>
         )}
+      </div>
       </div>
       <div className="hidden sm:flex items-center gap-2 shrink-0">
         <span className="inline-block w-3.5 h-3.5 rounded-full border border-black/10" style={{ backgroundColor: cat.color }} />
