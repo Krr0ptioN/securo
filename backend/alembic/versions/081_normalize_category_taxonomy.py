@@ -1,4 +1,8 @@
-"""normalize category taxonomy visuals and legacy duplicates
+"""Seed normalized taxonomy visuals and merge legacy category labels.
+
+This migration is limited to schema-owned category metadata and references.
+It does not embed or export production financial records; all updates are
+scoped to the workspace rows present in the target database.
 
 Revision ID: 081
 Revises: 080

@@ -1,4 +1,8 @@
-"""materialize imported category paths as an audited hierarchy
+"""Seed the canonical category taxonomy and materialize imported paths.
+
+This migration is a deterministic, tenant-scoped population step: it contains
+only taxonomy labels and mapping rules, never exported account, transaction,
+payee, or user data. UUIDs and audit rows are generated at runtime.
 
 Revision ID: 080
 Revises: 079
