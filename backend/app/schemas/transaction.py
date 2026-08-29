@@ -48,6 +48,9 @@ class TransactionCreate(TransactionBase):
     total_installments: Optional[int] = Field(default=None, ge=1)
     installment_total_amount: Optional[Decimal] = None
     installment_purchase_date: Optional[_Date] = None
+    related_entity_type: Optional[str] = None
+    related_entity_id: Optional[uuid.UUID] = None
+    related_entity_name: Optional[str] = None
 
     @model_validator(mode="after")
     def validate_installment_fields(self):
@@ -116,6 +119,9 @@ class TransactionUpdate(BaseModel):
     # same series; "all" touches every row in the series. Ignored when the
     # transaction has no installment fingerprint.
     apply_to: Literal["this", "future", "all"] = "this"
+    related_entity_type: Optional[str] = None
+    related_entity_id: Optional[uuid.UUID] = None
+    related_entity_name: Optional[str] = None
 
 
 class InstallmentSeriesCreate(BaseModel):

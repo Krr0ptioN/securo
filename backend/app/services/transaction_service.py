@@ -731,6 +731,9 @@ async def create_transaction(
         total_installments=data.total_installments,
         installment_total_amount=data.installment_total_amount,
         installment_purchase_date=data.installment_purchase_date,
+        related_entity_type=data.related_entity_type,
+        related_entity_id=data.related_entity_id,
+        related_entity_name=data.related_entity_name,
     )
     if data.effective_bill_date is not None:
         await _resync_bill_link_from_override(session, transaction, account)
