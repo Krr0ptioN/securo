@@ -257,6 +257,9 @@ export interface Transaction {
   effective_bill_date: string | null
   // The recurring bill this transaction fulfills, if any (issue #116).
   recurring_transaction_id?: string | null
+  related_entity_type?: 'loan' | 'debt_repayment' | 'goal' | string | null
+  related_entity_id?: string | null
+  related_entity_name?: string | null
   splits: TransactionSplit[]
   // Shared-transaction view fields. Set per-request when the viewer
   // is a linked split member but not the owner. Render `viewer_share`
@@ -713,6 +716,7 @@ export interface Budget {
   amount: number
   month: string
   is_recurring: boolean
+  currency: string
 }
 
 export interface BudgetVsActual {

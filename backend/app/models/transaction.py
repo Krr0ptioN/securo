@@ -107,6 +107,12 @@ class Transaction(Base):
         nullable=True,
         index=True,
     )
+    # Optional business-entity context shown in transaction history (loan,
+    # repayment, goal, etc.). Kept generic so new entity types do not require
+    # another transaction-table migration.
+    related_entity_type: Mapped[Optional[str]] = mapped_column(String(32), nullable=True, index=True)
+    related_entity_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    related_entity_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     account: Mapped["Account"] = relationship(back_populates="transactions")

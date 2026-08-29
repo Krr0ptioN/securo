@@ -170,6 +170,7 @@ async def create_budget(
         amount=data.amount,
         month=data.month.replace(day=1),
         is_recurring=data.is_recurring,
+        currency=data.currency.upper(),
     )
     session.add(budget)
     await session.commit()
@@ -195,6 +196,7 @@ async def update_budget(
                 amount=data.amount if data.amount is not None else budget.amount,
                 month=effective,
                 is_recurring=True,
+                currency=data.currency.upper() if data.currency else budget.currency,
             )
             session.add(new_budget)
             await session.commit()

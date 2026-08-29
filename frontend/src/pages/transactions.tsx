@@ -1144,6 +1144,11 @@ export default function TransactionsPage() {
                 {tx.installment_number}/{tx.total_installments}
               </span>
             )}
+            {tx.related_entity_type && (
+              <span className="inline-flex items-center text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-900 px-1.5 py-0.5 rounded-full" title={tx.related_entity_name ?? undefined}>
+                {tx.related_entity_type === 'debt_repayment' ? 'Debt repayment' : tx.related_entity_type === 'loan' ? 'Loan' : tx.related_entity_type === 'goal' ? 'Goal' : tx.related_entity_type}
+              </span>
+            )}
             {shouldShowPendingBadge(tx) && (
               <span
                 title={t('transactions.pending')}

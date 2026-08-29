@@ -93,7 +93,7 @@ export default function BudgetsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (data: { category_id: string; amount: number; month: string; is_recurring?: boolean }) =>
+    mutationFn: (data: { category_id: string; amount: number; month: string; is_recurring?: boolean; currency?: string }) =>
       budgetsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
@@ -104,8 +104,8 @@ export default function BudgetsPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, amount }: { id: string; amount: number }) =>
-      budgetsApi.update(id, { amount }),
+    mutationFn: ({ id, amount, currency }: { id: string; amount: number; currency: string }) =>
+      budgetsApi.update(id, { amount, currency }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] })
       setDialogOpen(false)
@@ -225,7 +225,7 @@ export default function BudgetsPage() {
                       )}
                     </span>
                   </td>
-                  <td className="py-3 text-sm font-semibold tabular-nums text-foreground">{mask(formatCurrency(budget.amount, userCurrency, locale))}</td>
+                  <td className="py-3 text-sm font-semibold tabular-nums text-foreground">{mask(formatCurrency(budget.amount, budget.currency || userCurrency, locale))}</td>
                   {canWrite && (
                     <td className="py-3 pr-4 sm:pr-5">
                       <div className="flex items-center justify-end gap-1">
@@ -272,6 +272,7 @@ export default function BudgetsPage() {
                 updateMutation.mutate({
                   id: editing.id,
                   amount: parseFloat(formData.get('amount') as string),
+                  currency: (formData.get('currency') as string || userCurrency).toUpperCase(),
                 })
               } else {
                 const isRecurring = formData.get('is_recurring') === 'on'
@@ -280,6 +281,7 @@ export default function BudgetsPage() {
                   amount: parseFloat(formData.get('amount') as string),
                   month: monthParam,
                   is_recurring: isRecurring,
+                  currency: (formData.get('currency') as string || userCurrency).toUpperCase(),
                 })
               }
             }}
@@ -322,6 +324,10 @@ export default function BudgetsPage() {
                 defaultValue={editing?.amount?.toString() ?? ''}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Budget currency</Label>
+              <Input name="currency" maxLength={3} defaultValue={editing?.currency ?? userCurrency} className="uppercase" required />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setEditing(null) }}>

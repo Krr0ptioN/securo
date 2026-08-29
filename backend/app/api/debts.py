@@ -89,10 +89,10 @@ async def get_debt(debt_id: uuid.UUID, ctx: WorkspaceContext = Depends(current_w
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_debt(data: DebtCreate, ctx: WorkspaceContext = Depends(current_writable_workspace), session: AsyncSession = Depends(get_async_session)):
     payee = await _owned(session, Payee, data.payee_id, ctx.workspace.id, "Payee not found"); account = await _owned(session, Account, data.account_id, ctx.workspace.id, "Account not found"); await _category(session, data.category_id, ctx.workspace.id)
-    tx = Transaction(user_id=ctx.user_id, workspace_id=ctx.workspace.id, account_id=account.id, category_id=data.category_id, payee_id=payee.id, payee=payee.name, description=data.description, amount=data.principal, currency=data.currency.upper(), date=data.opened_on, type="debit" if data.direction == "receivable" else "credit", source="manual", status="posted", notes=data.notes, transfer_pair_id=uuid.uuid4())
+    tx = Transaction(user_id=ctx.user_id, workspace_id=ctx.workspace.id, account_id=account.id, category_id=data.category_id, payee_id=payee.id, payee=payee.name, description=data.description, amount=data.principal, currency=data.currency.upper(), date=data.opened_on, type="debit" if data.direction == "receivable" else "credit", source="manual", status="posted", notes=data.notes, transfer_pair_id=uuid.uuid4(), related_entity_type="loan", related_entity_id=None, related_entity_name=data.description)
     apply_effective_date(tx, account); session.add(tx); await session.flush(); await stamp_primary_amount(session, ctx.user_id, tx)
     values = data.model_dump(); values.pop("account_id"); values["currency"] = data.currency.upper(); values["interest_start_on"] = values["interest_start_on"] or data.opened_on; values["last_accrual_on"] = values["interest_start_on"]
-    debt = Debt(user_id=ctx.user_id, workspace_id=ctx.workspace.id, account_id=account.id, **values, origin_transaction_id=tx.id); session.add(debt); await session.commit(); await session.refresh(debt)
+    debt = Debt(user_id=ctx.user_id, workspace_id=ctx.workspace.id, account_id=account.id, **values, origin_transaction_id=tx.id); session.add(debt); await session.flush(); tx.related_entity_id = debt.id; await session.commit(); await session.refresh(debt)
     return await _read(session, debt)
 
 @router.patch("/{debt_id}")
@@ -124,7 +124,7 @@ async def add_payment(debt_id: uuid.UUID, data: PaymentCreate, ctx: WorkspaceCon
     if principal_amount > before["principal_balance"]: raise HTTPException(400, "Payment exceeds remaining balance")
     payee = await session.get(Payee, debt.payee_id); principal_tx = interest_tx = None
     async def post(amount, description, is_transfer):
-        tx = Transaction(user_id=ctx.user_id, workspace_id=ctx.workspace.id, account_id=account.id, category_id=debt.category_id if is_transfer else None, payee_id=debt.payee_id, payee=payee.name if payee else None, description=description, amount=amount, currency=debt.currency, date=data.paid_on, type="credit" if debt.direction == "receivable" else "debit", source="manual", status="posted", notes=data.notes, transfer_pair_id=uuid.uuid4() if is_transfer else None)
+        tx = Transaction(user_id=ctx.user_id, workspace_id=ctx.workspace.id, account_id=account.id, category_id=debt.category_id if is_transfer else None, payee_id=debt.payee_id, payee=payee.name if payee else None, description=description, amount=amount, currency=debt.currency, date=data.paid_on, type="credit" if debt.direction == "receivable" else "debit", source="manual", status="posted", notes=data.notes, transfer_pair_id=uuid.uuid4() if is_transfer else None, related_entity_type="debt_repayment", related_entity_id=debt.id, related_entity_name=debt.description)
         apply_effective_date(tx, account); session.add(tx); await session.flush(); await stamp_primary_amount(session, ctx.user_id, tx); return tx
     if principal_amount: principal_tx = await post(principal_amount, f"Debt principal: {debt.description}", True)
     if interest_amount: interest_tx = await post(interest_amount, f"Debt interest: {debt.description}", False)
