@@ -224,6 +224,8 @@ postgresql:
 # Simple StatefulSet for Redis
 redis:
   enabled: true
+  persistence:
+    enabled: false
   image:
     repository: docker.io/library/redis
     tag: 8-alpine
