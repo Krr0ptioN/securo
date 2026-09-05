@@ -26,6 +26,8 @@ spec:
         - name: redis
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+            runAsUser: 999
+            runAsGroup: 999
           image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
           imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
           ports:
