@@ -23,8 +23,12 @@ spec:
         app.kubernetes.io/component: celery-worker
     spec:
       serviceAccountName: {{ include "securo.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: celery-worker
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
           imagePullPolicy: {{ .Values.celeryWorker.image.pullPolicy }}
           command:

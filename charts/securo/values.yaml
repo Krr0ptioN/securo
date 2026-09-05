@@ -242,6 +242,16 @@ serviceAccount:
   name: ""
   imagePullSecrets: []
 
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: [ALL]
+
 autoscaling:
   enabled: false
   minReplicas: 1

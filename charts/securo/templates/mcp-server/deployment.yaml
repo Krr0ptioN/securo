@@ -21,8 +21,12 @@ spec:
         app.kubernetes.io/component: mcp-server
     spec:
       serviceAccountName: {{ include "securo.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: mcp-server
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
           image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
           imagePullPolicy: {{ .Values.mcpServer.image.pullPolicy }}
           command:
