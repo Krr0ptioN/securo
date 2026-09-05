@@ -119,6 +119,9 @@ jobs:
         run: |
           # Strip the 'v' prefix from the release tag if it exists, as helm chart version needs to be semver without v.
           VERSION="${{ github.event.release.tag_name }}"
+          if [[ -z "$VERSION" ]]; then
+            VERSION="$(awk '/^version:/ {print $2; exit}' charts/securo/Chart.yaml)"
+          fi
           VERSION="${VERSION#v}"
 
           echo "Injecting version $VERSION into artifacthub.io/images annotation"
