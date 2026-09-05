@@ -51,8 +51,8 @@ spec:
           requests:
             storage: 2Gi
   {{- else }}
-  volumes:
-    - name: redis-data
-      emptyDir: {}
+      volumes:
+        - name: redis-data
+          emptyDir: {}
   {{- end }}
 {{- end }}
