@@ -71,9 +71,9 @@ config:
   # Redis configuration
   # If redis.enabled is true, the internal redis will be deployed.
   # If redis.enabled is false, you must provide your external Redis URL here.
-  redisUrl: 'redis://{{ include "securo.fullname" . }}-redis-master:6379/0'
-  celeryBrokerUrl: 'redis://{{ include "securo.fullname" . }}-redis-master:6379/0'
-  celeryResultBackend: 'redis://{{ include "securo.fullname" . }}-redis-master:6379/0'
+  redisUrl: 'redis://{{ include "securo.fullname" . }}-redis-cache:6379/0'
+  celeryBrokerUrl: 'redis://{{ include "securo.fullname" . }}-redis-cache:6379/0'
+  celeryResultBackend: 'redis://{{ include "securo.fullname" . }}-redis-cache:6379/0'
 
   storageLocalPath: "/app/data/attachments"
   agentsKnowledgeStoragePath: "/app/data/agent_knowledge"

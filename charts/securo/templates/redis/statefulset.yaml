@@ -2,12 +2,12 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "securo.fullname" . }}-redis-master
+  name: {{ include "securo.fullname" . }}-redis-cache
   labels:
     {{- include "securo.labels" . | nindent 4 }}
     app.kubernetes.io/component: redis
 spec:
-  serviceName: {{ include "securo.fullname" . }}-redis-master
+  serviceName: {{ include "securo.fullname" . }}-redis-cache
   replicas: 1
   selector:
     matchLabels:

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "securo.fullname" . }}-redis-master
+  name: {{ include "securo.fullname" . }}-redis-cache
   labels:
     {{- include "securo.labels" . | nindent 4 }}
     app.kubernetes.io/component: redis
