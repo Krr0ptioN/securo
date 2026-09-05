@@ -26,6 +26,12 @@ COPY . .
 # this layer from re-resolving anything outside the lock.
 RUN pip install --no-cache-dir --no-deps -e .
 
+# Run the application without root privileges in Kubernetes.
+RUN groupadd --system securo \
+    && useradd --system --gid securo --home-dir /app --no-create-home securo \
+    && chown -R securo:securo /app
+USER securo
+
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
