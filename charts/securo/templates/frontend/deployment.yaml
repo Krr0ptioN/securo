@@ -21,6 +21,7 @@ spec:
         {{- include "securo.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: frontend
     spec:
+      serviceAccountName: {{ include "securo.serviceAccountName" . }}
       containers:
         - name: frontend
           image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"

@@ -19,6 +19,7 @@ spec:
         {{- include "securo.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: postgresql
     spec:
+      serviceAccountName: {{ include "securo.serviceAccountName" . }}
       containers:
         - name: postgresql
           image: "{{ .Values.postgresql.image.repository }}:{{ .Values.postgresql.image.tag }}"

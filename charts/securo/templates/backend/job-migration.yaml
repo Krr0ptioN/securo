@@ -16,6 +16,7 @@ spec:
         {{- include "securo.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/component: migration
     spec:
+      serviceAccountName: {{ include "securo.serviceAccountName" . }}
       restartPolicy: OnFailure
       containers:
         - name: migration
